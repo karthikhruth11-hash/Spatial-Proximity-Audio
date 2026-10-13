@@ -1,0 +1,66 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: proxispeak-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: proxispeak-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coturn:
+    image: coturn/coturn:latest
+    container_name: proxispeak-coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "49152-49200:49152-49200/udp"
+    environment:
+      - TURNSERVER_ARGS=--use-auth-secret --static-auth-secret=proxispeak_coturn_secret_key_12345 --realm=proxispeak.local --verbose
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: proxispeak-server
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - CLIENT_ORIGIN=http://localhost:5173
+      - MONGODB_URI=mongodb://mongodb:27017/proxispeak
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=proxispeak_jwt_secret_dev_32characters_min
+      - COOKIE_SECRET=proxispeak_cookie_secret_dev_32chars_min
+      - TURN_SHARED_SECRET=proxispeak_coturn_secret_key_12345
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+  redis_data:

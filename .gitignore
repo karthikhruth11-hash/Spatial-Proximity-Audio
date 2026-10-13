@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds & Outputs
+dist/
+build/
+.vite/
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs & Tests
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
